@@ -14,5 +14,8 @@
   "license": "ISC",
   "dependencies": {
     "@truffle/hdwallet-provider": "^1.4.1"
+  },
+  "devDependencies": {
+    "truffle-plugin-verify": "^0.5.9"
   }
 }

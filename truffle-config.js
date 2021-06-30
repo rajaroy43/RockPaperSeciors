@@ -2,7 +2,7 @@ const HDWalletProvider = require("@truffle/hdwallet-provider");
 const infuraKey = "45662a3729fa43678d13b210e60dee48";
 const fs = require("fs");
 const mnemonic = fs.readFileSync(".secret").toString().trim();
-
+const etherscanApiKey = fs.readFileSync(".etherscanApi").toString().trim();
 module.exports = {
 	/**
 	 * Networks define how you connect to your ethereum client and let you set the
@@ -13,7 +13,7 @@ module.exports = {
 	 *
 	 * $ truffle test --network <network-name>
 	 */
-
+	plugins: ["truffle-plugin-verify"],
 	networks: {
 		// Useful for testing. The `development` name is special - truffle uses it by default
 		// if it's defined here and no other network is specified at the command line.
@@ -71,5 +71,8 @@ module.exports = {
 			//  evmVersion: "byzantium"
 			// }
 		},
+	},
+	api_keys: {
+		etherscan: etherscanApiKey,
 	},
 };
