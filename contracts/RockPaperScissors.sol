@@ -1,3 +1,4 @@
+//SPDX-License-Identifier:MIT
 pragma solidity 0.6.12;
 
 contract RockPaperScissors {
@@ -62,18 +63,16 @@ contract RockPaperScissors {
         _;
     }
     
-    constructor(address payable _fomopool) public{
-        fomoPool=_fomopool;
-        fomotimer=block.timestamp;
-    }
 
     // Save player's encrypted move.
     // Return 'true' if move was valid, 'false' otherwise.
     function play(bytes32 encrMove) public isRegistered returns (bool) {
         if (msg.sender == playerA && encrMovePlayerA == 0x0) {
             encrMovePlayerA = encrMove;
+            return true;
         } else if (msg.sender == playerB && encrMovePlayerB == 0x0) {
             encrMovePlayerB = encrMove;
+            return true;
         } else {
            return false;
         }
@@ -231,8 +230,10 @@ Once such a hash has been committed, it cannot be modified.
     }
     //move is an integer ranging from 1 to 3 which correspond to rock, paper and scissors  
     //password is a string that should be kept secret.
-    function getHash(uint move,string memory password) public pure returns(bytes32){
+    function getHash(string memory move_password) public pure returns(bytes32){
+        uint move=getFirstChar(move_password);
         require(move>=1 && move<=3,"invalid move");
-        return keccak256(abi.encodePacked(move,password));
+        return keccak256(abi.encodePacked(move_password));
     }
+    
 }
