@@ -20,11 +20,18 @@ contract("RockPaperScissors", function (accounts) {
 		it("should able to registered ", async function () {
 			const amount = new BN(web3.utils.toWei("2"));
 			await this.rockPaperScissors.register({ from: player1, value: amount });
+			let whoAmI = await this.rockPaperScissors.whoAmI({ from: player1 });
+			assert.equal(whoAmI, 1);
 			let contractBalance = await this.rockPaperScissors.getContractBalance();
 			assert.equal(amount.toString(), contractBalance.toString());
 			await this.rockPaperScissors.register({ from: player2, value: amount });
+			whoAmI = await this.rockPaperScissors.whoAmI({ from: player2 });
+			assert.equal(whoAmI, 2);
 			contractBalance = await this.rockPaperScissors.getContractBalance();
 			assert.equal(amount.add(amount).toString(), contractBalance.toString());
+			//For unregisted user whoAMI return 0
+			whoAmI = await this.rockPaperScissors.whoAmI({ from: player3 });
+			assert.equal(whoAmI, 0);
 		});
 		it("should not  able to registered if less than min bet", async function () {
 			const bet_MIN = await this.rockPaperScissors.BET_MIN();
@@ -73,6 +80,14 @@ contract("RockPaperScissors", function (accounts) {
 			const encryptedPlayer3Move = await this.rockPaperScissors.getHash("3-lithiumOtherOthers");
 			expectRevert.unspecified(this.rockPaperScissors.play(encryptedPlayer3Move, { from: player3 }));
 		});
+
+		it("Should not able to  reveal before both player played", async function () {
+			let bothPlayed = await this.rockPaperScissors.bothPlayed();
+			//Before  player played their move
+			assert.equal(bothPlayed, false);
+			await this.rockPaperScissors.play(this.encryptedPlayer1Move, { from: player1 });
+			expectRevert.unspecified(this.rockPaperScissors.reveal("1-lithium", { from: player1 }));
+		});
 		describe("Revealation", async function () {
 			beforeEach(async function () {
 				await this.rockPaperScissors.play(this.encryptedPlayer1Move, { from: player1 });
@@ -82,21 +97,43 @@ contract("RockPaperScissors", function (accounts) {
 				bothPlayed = await this.rockPaperScissors.bothPlayed();
 				//Both player played their move
 				assert.equal(bothPlayed, true);
+				let bothRevealed = await this.rockPaperScissors.bothRevealed();
+				assert.equal(bothRevealed, false);
 				await this.rockPaperScissors.reveal("1-lithium", { from: player1 });
 				await this.rockPaperScissors.reveal("2-lithiumOther", { from: player2 });
-				const bothRevealed = await this.rockPaperScissors.bothRevealed();
+				bothRevealed = await this.rockPaperScissors.bothRevealed();
 				assert.equal(bothRevealed, true);
 			});
 			it("Should not able to  reveal without registration", async function () {
 				const encryptedPlayer3Move = await this.rockPaperScissors.getHash("3-lithiumOtherOthers");
 				expectRevert.unspecified(this.rockPaperScissors.reveal(encryptedPlayer3Move, { from: player3 }));
 			});
+			it("Sould not able to reveal   for invalid move", async function () {
+				let bothRevealed = await this.rockPaperScissors.bothRevealed();
+				assert.equal(bothRevealed, false);
+				await this.rockPaperScissors.reveal("1-lithium", { from: player1 });
+				bothRevealed = await this.rockPaperScissors.bothRevealed();
+				assert.equal(bothRevealed, false);
+				await this.rockPaperScissors.reveal("4-lithiumOther", { from: player2 });
+				bothRevealed = await this.rockPaperScissors.bothRevealed();
+				assert.equal(bothRevealed, false);
+			});
+			it("Sould not able to reveal  for invalid move of 1st player", async function () {
+				let bothRevealed = await this.rockPaperScissors.bothRevealed();
+				assert.equal(bothRevealed, false);
+				await this.rockPaperScissors.reveal("5-lithium", { from: player1 });
+				bothRevealed = await this.rockPaperScissors.bothRevealed();
+				assert.equal(bothRevealed, false);
+				await this.rockPaperScissors.reveal("2-lithiumOther", { from: player2 });
+				bothRevealed = await this.rockPaperScissors.bothRevealed();
+				assert.equal(bothRevealed, false);
+			});
 			describe("Getting results", async function () {
 				beforeEach(async function () {
 					await this.rockPaperScissors.reveal("1-lithium", { from: player1 });
 					await this.rockPaperScissors.reveal("2-lithiumOther", { from: player2 });
 				});
-				it("getting Outcome ", async function () {
+				it("getting Outcome for winner player", async function () {
 					// player1 play rock and player2 play paper
 					//Anyone can call getOutcome()
 					const ethBeforePlayer1 = await web3.eth.getBalance(player1);
